@@ -4,12 +4,15 @@ import { extend, createRoot, ReconcilerRoot, Dpr, Size } from '@react-three/fibe
 import { DomEvent } from '@react-three/fiber/dist/declarations/src/core/events'
 import { createPointerEvents } from './events'
 
-export function render(children: React.ReactNode) {
+type WorkerLike = Window | MessagePort
+
+export function render(children: React.ReactNode, sharedWorkerPort?: MessagePort) {
   extend(THREE)
 
   let root: ReconcilerRoot<HTMLCanvasElement>
   let dpr: Dpr = [1, 2]
   let size: Size = { width: 0, height: 0, top: 0, left: 0, updateStyle: false }
+  const workerLike: WorkerLike = sharedWorkerPort || self
   const emitter = mitt()
 
   const handleInit = (payload: any) => {
@@ -64,7 +67,7 @@ export function render(children: React.ReactNode) {
       // Render children once
       root.render(children)
     } catch (e: any) {
-      postMessage({ type: 'error', payload: e?.message })
+      workerLike.postMessage({ type: 'error', payload: e?.message })
     }
 
     // Shim window to the canvas from here on
@@ -93,7 +96,7 @@ export function render(children: React.ReactNode) {
     props: handleProps,
   }
 
-  self.onmessage = (event) => {
+  workerLike.onmessage = (event) => {
     const { type, payload } = event.data
     const handler = handlerMap[type as keyof typeof handlerMap]
     if (handler) handler(payload)

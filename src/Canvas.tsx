@@ -6,7 +6,7 @@ import { EVENTS } from './events'
 export interface CanvasProps
   extends Omit<RenderProps<HTMLCanvasElement>, 'size'>,
     React.HTMLAttributes<HTMLDivElement> {
-  worker: Worker
+  worker: Worker | SharedWorker
   fallback?: React.ReactNode
   /**
    * Options to pass to useMeasure.
@@ -26,6 +26,7 @@ function isRefObject<T>(ref: any): ref is React.MutableRefObject<T> {
 export function Canvas({ eventSource, worker, fallback, style, className, id, ...props }: CanvasProps) {
   const [shouldFallback, setFallback] = React.useState(false)
   const canvasRef = useRef<HTMLCanvasElement>(null!)
+  const workerLike = 'port' in worker ? worker.port : worker
 
   useEffect(() => {
     if (!worker) return
@@ -41,14 +42,14 @@ export function Canvas({ eventSource, worker, fallback, style, className, id, ..
       return
     }
 
-    worker.onmessage = (e) => {
+    workerLike.onmessage = (e) => {
       if (e.data.type === 'error') {
         // Worker failed to initialize
         setFallback(true)
       }
     }
 
-    worker.postMessage(
+    workerLike.postMessage(
       {
         type: 'init',
         payload: {
@@ -79,7 +80,7 @@ export function Canvas({ eventSource, worker, fallback, style, className, id, ..
             event.target.releasePointerCapture(event.pointerId)
           }
 
-          worker.postMessage({
+          workerLike.postMessage({
             type: 'dom_events',
             payload: {
               eventName,
@@ -111,7 +112,7 @@ export function Canvas({ eventSource, worker, fallback, style, className, id, ..
     })
 
     const handleResize = () => {
-      worker.postMessage({
+      workerLike.postMessage({
         type: 'resize',
         payload: {
           width: currentEventSource.clientWidth,
@@ -130,7 +131,7 @@ export function Canvas({ eventSource, worker, fallback, style, className, id, ..
 
   useEffect(() => {
     if (!worker) return
-    worker.postMessage({ type: 'props', payload: props })
+    workerLike.postMessage({ type: 'props', payload: props })
   }, [worker, props])
 
   return shouldFallback ? (

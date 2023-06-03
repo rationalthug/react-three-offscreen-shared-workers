@@ -1,18 +1,21 @@
 {
   "compilerOptions": {
     "module": "esnext",
-    "target": "es2018",
+    "target": "ES2018",
+    "lib": ["WebWorker", "dom", "ES2018"],
     "allowSyntheticDefaultImports": true,
     "jsx": "react",
     "strict": true,
     "preserveSymlinks": true,
-    "moduleResolution": "Node",
+    "moduleResolution": "node",
     "esModuleInterop": true,
     "declaration": true,
     "declarationDir": "dist",
+    "incremental": true,
     "skipLibCheck": true,
     "removeComments": false,
-    "baseUrl": "."
+    "baseUrl": ".",
+    "types": ["@types/sharedworker"]
   },
   "include": ["src"]
 }
